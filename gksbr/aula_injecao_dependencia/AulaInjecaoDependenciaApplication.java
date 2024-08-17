@@ -1,32 +1,43 @@
 package gksbr.aula_injecao_dependencia;
 
+
 import java.util.List;
 
 
 public class AulaInjecaoDependenciaApplication {
 
 	public static void main(String[] args) {
-			new MigracaoUsuario().migrar();
+			MigracaoUsuario migracao = new MigracaoUsuario(new FileReader(), new BdWriter());
+			migracao.migrar();
 	}
 }
 
-//Problemas de MigracaoUsuario:
+//
 
-//1- As dependências estão sendo criadas diretamente dentro dela, em vez de serem injetadas (via setters ou contrutor). Viola o principio da inversao de controle
-//2- Acoplamento forte: se futuramente quiser usar essa classe para ler uma api em vez de um arquivo, precisaria modificá-la(retirar e colocar outras linhas) sem extendê-la(usar overrides, interfaces, etc). Ou seja, essa classe viola o principio OPEN CLOSED do SOLID. Uma opcao para resolver seria usando uma interface leitora que é implementada pelo FileReader e por um possível leitor de APIs
-//3- Essa classe instancia objetos, lê os dados e os grava. Viola o principio da responsabilidade única do SOLID
 class MigracaoUsuario {
-	FileReader reader = new FileReader();
-	BdWriter writer = new BdWriter();
+	private Reader<User> reader;
+	private Writer<User> writer;
+
+	MigracaoUsuario(Reader<User> r, Writer<User> w)
+	{
+		this.reader = r;
+		this.writer = w;
+	}
 
 	void migrar() {
-		// ler usuarios de A
-		List<User> users = reader.read();
 
-		// escrever para B
+		List<User> users = reader.read();
 		writer.write(users);
 
 	}
+}
+
+interface Reader <T>{
+	List<T> read();
+}
+
+interface Writer <T>{
+	void write(List<T> itens);
 }
 
 record User(String email, String username, String password)
@@ -34,16 +45,20 @@ record User(String email, String username, String password)
 
 }
 
-class FileReader {
-	List<User> read() {
+class FileReader implements Reader<User> {
+
+	
+	public List<User> read() {
 
 		return List.of();
 	}
 }
 
-class BdWriter{
-	void write(List<User> users)
+class BdWriter implements Writer <User>{
+	@Override
+	public void write(List<User> users)
 	{
+		System.out.println();
 		System.out.println("Escrevendo usuários no banco...");
 		System.out.println(users);
 	}
